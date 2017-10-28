@@ -1,9 +1,9 @@
 package chapter2
 
 object FibonacciModule {
-  private def fibonacci(n: Int): Int = {
+  private def fibonacciRec(n: Int): Int = {
     if (n <= 1) n
-    else fibonacci(n - 1) + fibonacci(n - 2)
+    else fibonacciRec(n - 1) + fibonacciRec(n - 2)
   }
 
   private def fibonacciTailRec(n: Int): Int = {
@@ -15,7 +15,7 @@ object FibonacciModule {
   }
 
   def main(args: Array[String]): Unit = {
-    println(fibonacci(7))
+    println(fibonacciRec(7))
     println(fibonacciTailRec(7))
   }
 }
