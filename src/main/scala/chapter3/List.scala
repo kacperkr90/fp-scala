@@ -11,7 +11,6 @@ object List {
     case Cons(x,xs) => x + sum(xs)
   }
 
-
   def product(ds: List[Double]): Double = ds match {
     case Nil => 1.0
     case Cons(0.0, _) => 0.0
@@ -44,6 +43,12 @@ object List {
     case _ => Nil
   }
 
+  def init[A](l: List[A]): List[A] = l match {
+    case Cons(x, Nil) => Nil
+    case Cons(x, xs) => Cons(x, init(xs))
+    case _ => Nil
+  }
+
   def main(args: Array[String]): Unit = {
     val list = List(1, 2, 3, 4, 5)
 
@@ -58,5 +63,8 @@ object List {
     println(List.dropWhile(list, (x: Int) => x < 4) == List(4, 5))
     println(List.dropWhile(list, (x: Int) => x < 0) == list)
     println(List.dropWhile(list, (x: Int) => x > 0) == Nil)
+
+    println(init(list) == List(1, 2, 3, 4))
+    println(init(List(1)) == Nil)
   }
 }
