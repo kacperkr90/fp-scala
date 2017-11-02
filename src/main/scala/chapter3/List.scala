@@ -81,7 +81,7 @@ object List {
   def foldLeft[A,B](as: List[A], z: B)(f: (B, A) => B): B =
     as match {
       case Nil => z
-      case Cons(x, xs) =>foldLeft(xs, f(z, x))(f)
+      case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
   }
 
 
@@ -95,36 +95,30 @@ object List {
   def foldRight2[A,B](as: List[A], z: B)(f: (A, B) => B): B =
     foldLeft(as, (b:B) => b)((g,a) => b => g(f(a,b)))(z)
 
+  def appendViaFoldRight[A](as: List[A], z: List[A]): List[A] =
+    foldRight(as, z)(Cons(_, _))
+
+  def appendViaFoldLeft[A](as: List[A], z: List[A]): List[A] =
+    foldLeft(reverse(as), z)((acc, x) => Cons(x, acc))
+
+  def flatten[A](l: List[List[A]]): List[A] =
+    foldRight(l, Nil:List[A])((xs, acc) => appendViaFoldRight(xs, acc))
+
+  def map[A,B](l: List[A])(f: A => B): List[B] =
+    foldRight2(l, Nil:List[B])((x, xs) => Cons(f(x), xs))
+
+  def add1ToEach(l: List[Int]) =
+    map(l)(_ + 1)
+
+  def doublesToStrings(l: List[Double]) =
+    map(l)(_.toString)
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    foldRight(as, Nil:List[A])((x, xs) => if (f(x)) Cons(x, xs) else xs)
+
   def trace[A](s: String, a: A): A = {
     println(s)
     a
   }
 
-  def main(args: Array[String]): Unit = {
-    val list = List(1, 2, 3, 4, 5)
-
-    println(List.tail(list) == List(2, 3, 4, 5))
-
-    println(List.setHead(list, 5) == List(5, 2, 3, 4, 5))
-
-    println(List.drop(list, 3) == List(4, 5))
-    println(List.drop(list, 10) == Nil)
-    println(List.drop(list, 0) == list)
-
-    println(List.dropWhile(list, (x: Int) => x < 4) == List(4, 5))
-    println(List.dropWhile(list, (x: Int) => x < 0) == list)
-    println(List.dropWhile(list, (x: Int) => x > 0) == Nil)
-
-    println(init(list) == List(1, 2, 3, 4))
-    println(init(List(1)) == Nil)
-
-//    println(foldRight(List(1,2,3),  Nil:List[Int])(Cons(_,_)))
-//
-////    println(length(list) == 5)
-//
-//    println(sum2(list))
-//    println(sum3(list))
-
-    println(reverse(list))
-  }
 }
