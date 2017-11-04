@@ -36,4 +36,23 @@ class ListTest extends FlatSpec with Matchers {
   List.doublesToStrings(List(1.0, 2, 3)) should equal (List("1.0", "2.0", "3.0"))
 
   List.filter(list)(_ > 3) should equal (List(4, 5))
+
+  List.flatMap(List(1,2,3))(i => List(i,i)) should equal (List(1,1,2,2,3,3))
+  List.flatMap2(List(1,2,3))(i => List(i,i)) should equal (List(1,1,2,2,3,3))
+
+  List.filterViaFlatMap(list)(_ > 3) should equal (List(4, 5))
+
+  List.zipWithSum(List(1,2,3), List(4,5,6)) should equal (List(5,7,9))
+  List.zipWithSum(Nil:List[Int], Nil:List[Int]) should equal (Nil)
+  List.zipWithSum(List(1,2,3), List(4,5,6,1,1)) should equal (List(5,7,9,1,1))
+  List.zipWithSum(List(1,2,3,5,6), List(4,5,6)) should equal (List(5,7,9,5,6))
+
+  List.zipWith(List(1,2,3), List(4,5,6))(_ + _) should equal (List(5,7,9))
+  List.zipWith(Nil:List[Int], Nil:List[Int])(_ + _) should equal (Nil)
+  List.zipWith(List(1,2,3), List(4,5,6,1,1))(_ + _) should equal (List(5,7,9,1,1))
+  List.zipWith(List(1,2,3,5,6), List(4,5,6))(_ + _) should equal (List(5,7,9,5,6))
+
+  List.hasSubsequence(List(1,2,3,4), List(1,2)) should equal (true)
+  List.hasSubsequence(List(1,2,3,4), List(2,3)) should equal (true)
+  List.hasSubsequence(List(1,2,3,4), List(4)) should equal (true)
 }

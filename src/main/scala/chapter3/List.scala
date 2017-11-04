@@ -102,7 +102,7 @@ object List {
     foldLeft(reverse(as), z)((acc, x) => Cons(x, acc))
 
   def flatten[A](l: List[List[A]]): List[A] =
-    foldRight(l, Nil:List[A])((xs, acc) => appendViaFoldRight(xs, acc))
+    foldRight(l, Nil:List[A])(appendViaFoldRight)
 
   def map[A,B](l: List[A])(f: A => B): List[B] =
     foldRight2(l, Nil:List[B])((x, xs) => Cons(f(x), xs))
@@ -115,6 +115,36 @@ object List {
 
   def filter[A](as: List[A])(f: A => Boolean): List[A] =
     foldRight(as, Nil:List[A])((x, xs) => if (f(x)) Cons(x, xs) else xs)
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] =
+    flatten(map(as)(f))
+
+  def flatMap2[A,B](as: List[A])(f: A => List[B]): List[B] =
+    foldLeft(as, Nil:List[B])((acc, x) => appendViaFoldRight(acc, f(x)))
+
+  def filterViaFlatMap[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as)(x => if (f(x)) List(x) else Nil)
+
+  def zipWithSum(l1: List[Int], l2: List[Int]): List[Int] = {
+    def go(l1: List[Int], l2: List[Int], acc: List[Int]): List[Int] = (l1, l2) match {
+      case (Cons(a, as), Cons(b, bs)) => go(as, bs, appendViaFoldRight(acc, List(a + b)))
+      case (Nil, _) => appendViaFoldRight(acc, l2)
+      case _ => appendViaFoldRight(acc, l1)
+    }
+    go(l1, l2, Nil:List[Int])
+  }
+
+  def zipWith[A](l1: List[A], l2: List[A])(f: (A, A) => A): List[A] = {
+    def go(l1: List[A], l2: List[A], acc: List[A]): List[A] = (l1, l2) match {
+      case (Cons(a, as), Cons(b, bs)) => go(as, bs, appendViaFoldRight(acc, List(f(a, b))))
+      case (Nil, _) => appendViaFoldRight(acc, l2)
+      case _ => appendViaFoldRight(acc, l1)
+    }
+    go(l1, l2, Nil:List[A])
+  }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+    false
 
   def trace[A](s: String, a: A): A = {
     println(s)
