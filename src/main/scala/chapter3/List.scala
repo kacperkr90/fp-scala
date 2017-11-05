@@ -143,8 +143,31 @@ object List {
     go(l1, l2, Nil:List[A])
   }
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
-    false
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+    def go[A](l1: List[A], l2: List[A], mem: List[A]): Boolean = (l1, l2, mem) match {
+      case (_, Nil, _) => true
+      case (Nil, _, _) => false
+      case (Cons(a, as), Cons(b, bs), Cons(_, cs)) =>
+        if (a == b)
+          go(as, bs, mem)
+        else
+          go(cs, sub, cs)
+    }
+    go(sup, sub, sup)
+  }
+
+  @annotation.tailrec
+  def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
+    case (_,Nil) => true
+    case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
+    case _ => false
+  }
+  @annotation.tailrec
+  def hasSubsequence2[A](sup: List[A], sub: List[A]): Boolean = sup match {
+    case Nil => sub == Nil
+    case _ if startsWith(sup, sub) => true
+    case Cons(_,t) => hasSubsequence2(t, sub)
+  }
 
   def trace[A](s: String, a: A): A = {
     println(s)
