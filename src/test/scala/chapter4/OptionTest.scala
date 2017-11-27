@@ -22,4 +22,8 @@ class OptionTest extends FlatSpec with Matchers  {
   option.filter(_==2) should be (None)
   (None:Option[Int]).filter(_>2) should be (None)
 
+  val seq = Seq(1.0, 2, 3, 4, 5)
+  Option.variance(seq) should be (Some(2.0))
+  Option.variance(Nil) should be (None)
+  Option.variance(Seq()) should be (None)
 }

@@ -28,3 +28,24 @@ sealed trait Option[+A] {
 }
 case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
+
+object Option {
+
+  def of[A](xs: Seq[A]): Option[Seq[A]] = {
+    if (xs == Nil)
+      None
+    else
+      Some(xs)
+  }
+
+  def mean(xs: Seq[Double]): Option[Double] =
+    of(xs)
+        .map(as => as.sum / as.length)
+
+  def variance(xs: Seq[Double]): Option[Double] = {
+    mean(xs)
+        .map(m => xs.map(x => math.pow(x - m, 2)))
+        .flatMap(mean)
+  }
+
+}
