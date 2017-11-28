@@ -26,4 +26,11 @@ class OptionTest extends FlatSpec with Matchers  {
   Option.variance(seq) should be (Some(2.0))
   Option.variance(Nil) should be (None)
   Option.variance(Seq()) should be (None)
+
+  val list = List(Some(1), Some(2), Some(3))
+  val list2 = List(Some(1), None, Some(3))
+  Option.sequence(list) should be (Some(List(1, 2, 3)))
+  Option.sequence(list2) should be (None)
+  Option.sequence2(list) should be (Some(List(1, 2, 3)))
+  Option.sequence2(list2) should be (None)
 }

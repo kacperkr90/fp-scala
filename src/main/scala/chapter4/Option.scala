@@ -31,6 +31,10 @@ case object None extends Option[Nothing]
 
 object Option {
 
+  def apply[A](a: A): Option[A] =
+    if (a != null) Some(a)
+    else None
+
   def of[A](xs: Seq[A]): Option[Seq[A]] = {
     if (xs == Nil)
       None
@@ -48,4 +52,19 @@ object Option {
         .flatMap(mean)
   }
 
+  def Try[A](a: => A): Option[A] =
+    try Some(a)
+    catch { case e: Exception => None }
+
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    a.flatMap(x => b.map(y => f(x, y)))
+
+  def sequence[A](a: List[Option[A]]): Option[List[A]] =
+    a.foldRight(Option(Nil:List[A]))(map2(_, _)(_::_))
+
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
+    a.foldRight(Option(Nil:List[B]))((x, acc) => map2(f(x), acc)(_::_))
+
+  def sequence2[A](a: List[Option[A]]): Option[List[A]] =
+    traverse(a)(identity)
 }
