@@ -19,4 +19,9 @@ class StreamTest extends FlatSpec with Matchers {
   stream.drop(-1).toList should be (List())
 
   stream.takeWhile(_ < 4).toList should be (Stream(1, 2, 3).toList)
+
+  stream.forAll(_ < 4) should be (false)
+
+  stream.takeWhile2(_ < 4).toList should be (Stream(1, 2, 3).toList)
+
 }
