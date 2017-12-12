@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class StreamTest extends FlatSpec with Matchers {
 
-  val stream = Stream(1, 2, 3, 4)
+  val stream: Stream[Int] = Stream(1, 2, 3, 4)
 
   stream.toList should be (List(1, 2, 3, 4))
 
@@ -25,4 +25,14 @@ class StreamTest extends FlatSpec with Matchers {
   stream.takeWhile2(_ < 4).toList should be (Stream(1, 2, 3).toList)
 
   stream.headOption2 should be (Option(1))
+
+  stream.map(_ * 2).toList should be (Stream(2, 4, 6, 8).toList)
+
+  stream.filter(_ % 2 == 0).toList should be (Stream(2, 4).toList)
+
+  stream.append(5).toList should be (Stream(1, 2, 3, 4, 5).toList)
+  stream.append(5).toList should not be Stream(1, 2, 3, 4).toList
+
+  val stream2: Stream[Stream[Int]] = Stream(stream, stream, stream)
+  stream2.flatMap(identity).toList should be (Stream(1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4).toList)
 }
