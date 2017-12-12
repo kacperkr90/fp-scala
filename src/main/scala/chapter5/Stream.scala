@@ -40,12 +40,13 @@ sealed trait Stream[+A] {
     foldRight((b: B) => b)((a, g) => (b) => g(f(b, a)))(z)
 
   def takeWhile2(p: A => Boolean): Stream[A] =
-    foldRight(Stream.empty:Stream[A])((a, b) => {
-      Stream.cons(a, if (p(a)) b else Stream.empty)
-    })
+    foldRight(Stream.empty:Stream[A])((a, b) => if (p(a)) Stream.cons(a, b) else Stream.empty)
 
   def headOption2: Option[A] =
     foldLeftViaFoldRight(Option.empty:Option[A])((b, a) => b.orElse(Option(a)))
+
+  def headOption3: Option[A] =
+    foldRight(Option.empty:Option[A])((a, _) => Option(a))
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
