@@ -6,7 +6,7 @@ object FibonacciModule {
     else fibonacciRec(n - 1) + fibonacciRec(n - 2)
   }
 
-  private def fibonacciTailRec(n: Int): Int = {
+  def fibonacciTailRec(n: Int): Int = {
     def loop(n: Int, acc: Int, cur: Int): Int = {
       if (n == 0) acc
       else loop(n - 1, cur, acc + cur)

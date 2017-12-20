@@ -1,5 +1,7 @@
 package chapter5
 
+import chapter2.FibonacciModule
+
 sealed trait Stream[+A] {
 
   def headOption: Option[A] = this match {
@@ -75,4 +77,23 @@ object Stream {
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
+
+  def constant[A](a: A): Stream[A] =
+    Stream.cons(a, constant(a))
+
+  def from(n: Int): Stream[Int] =
+    Stream.cons(n, from(n + 1))
+
+  def fibs(): Stream[Int] =
+    Stream.from(0).map(FibonacciModule.fibonacciTailRec)
+
+  def fibs2(): Stream[Int] = {
+    def go(a: Int, b: Int):Stream[Int] =
+      Stream.cons(a, go(b, a + b))
+    go(0, 1)
+  }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z).map(x => Stream.cons(x._1, unfold(x._2)(f))).getOrElse(Stream.empty:Stream[A])
+
 }
