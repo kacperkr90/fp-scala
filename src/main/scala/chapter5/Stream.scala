@@ -61,6 +61,18 @@ sealed trait Stream[+A] {
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(Stream.empty:Stream[B])(f(_).foldRight(_)(Stream.cons(_, _)))
+
+  def mapViaUnfold[B](f: A => B): Stream[B] =
+    Stream.unfold(this) {
+      case Cons(h, t) => Option((f(h()), t()))
+      case _ => Option.empty
+    }
+
+  def takeViaUnfold(n: Int): Stream[A] =
+    Stream.unfold((this, n))(x => x._1 match {
+      case Cons(h, t) if x._2 > 0 => Option((h(), (t(), x._2 - 1)))
+      case _ => Option.empty
+    })
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -94,6 +106,17 @@ object Stream {
   }
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
-    f(z).map(x => Stream.cons(x._1, unfold(x._2)(f))).getOrElse(Stream.empty:Stream[A])
+    f(z).map(x => Stream.cons(x._1, unfold(x._2)(f))).getOrElse(Stream.empty: Stream[A])
 
+  def fibsViaUnfold(): Stream[Int] =
+    unfold((0, 1))(x => Option(x._1, (x._2, x._1 + x._2)))
+
+  def fromViaUnfold(n: Int): Stream[Int] =
+    unfold(n)(x => Option(x, x + 1))
+
+  def constantViaUnfold[A](a: A): Stream[A] =
+    unfold(a)(_ => Option(a, a))
+
+  def onesViaUnfold(): Stream[Int] =
+    unfold(1)(_ => Option(1, 1))
 }

@@ -43,4 +43,15 @@ class StreamTest extends FlatSpec with Matchers {
   Stream.fibs().take(8).toList should be (List(0, 1, 1, 2, 3, 5, 8, 13))
 
   Stream.unfold(5)(a => if (a == 0) Option.empty else Option((a, a - 1))).toList should be (List(5, 4, 3, 2, 1))
+
+  Stream.fibsViaUnfold().take(8).toList should be (List(0, 1, 1, 2, 3, 5, 8, 13))
+
+  Stream.fromViaUnfold(3).take(3).toList should be (List(3, 4, 5))
+
+  Stream.constantViaUnfold(1).take(5).toList should be (List(1, 1, 1, 1, 1))
+
+  stream.mapViaUnfold(_ * 2).toList should be (Stream(2, 4, 6, 8).toList)
+
+  stream.takeViaUnfold(2).toList should be (Stream(1, 2).toList)
+
 }
