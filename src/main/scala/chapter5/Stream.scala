@@ -73,6 +73,38 @@ sealed trait Stream[+A] {
       case Cons(h, t) if x._2 > 0 => Option((h(), (t(), x._2 - 1)))
       case _ => Option.empty
     })
+
+  def takeWhileViaUnfold(p: A => Boolean): Stream[A] =
+    Stream.unfold(this) {
+      case Cons(h, t) if p(h()) => Option(h(), t())
+      case _ => Option.empty
+    }
+
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] =
+    Stream.unfold(this, s2) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Option((Option(h1()), Option(h2())), (t1(), t2()))
+      case (_, Cons(h2, t2)) => Option((None, Option(h2())), (Stream.empty, t2()))
+      case (Cons(h1, t1), _) => Option((Option(h1()), None), (t1(), Stream.empty))
+      case _ => Option.empty
+    }
+
+  def zip[B](s2: Stream[B]): Stream[(A, B)] =
+    Stream.unfold(this, s2) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Option((h1(), h2()), (t1(), t2()))
+      case _ => Option.empty
+    }
+
+//  def startsWith[B >: A](s: Stream[B]): Boolean =
+//    this.zipAll(s).takeWhile(x => x.)
+
+  def startsWith[B >: A](s: Stream[B]): Boolean =
+    this.zipAll(s).forAll(x => x._1.exists(a => x._2.isEmpty || x._2.contains(a)))
+
+//  def hasSubsequence[B >: A](sub: Stream[A]): Boolean =
+//    Stream.unfold(this) {
+//      case Cons(h1, t1) =>
+//    }
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -119,4 +151,11 @@ object Stream {
 
   def onesViaUnfold(): Stream[Int] =
     unfold(1)(_ => Option(1, 1))
+
+  def zipWithViaUnfold[A, B](l1: Stream[A], l2: Stream[A])(f: (A, A) => B): Stream[B] =
+    unfold((l1, l2)) {
+      case (Cons(h1, t1), Cons(h2, t2)) => Option(f(h1(), h2()), (t1(), t2()))
+      case _ => Option.empty
+    }
+
 }

@@ -54,4 +54,19 @@ class StreamTest extends FlatSpec with Matchers {
 
   stream.takeViaUnfold(2).toList should be (Stream(1, 2).toList)
 
+  stream.takeWhileViaUnfold(_ < 4).toList should be (Stream(1, 2, 3).toList)
+
+  Stream.zipWithViaUnfold(Stream(1, 2, 3), Stream(1, 2))(_ + _).toList should be (List(2, 4))
+
+  stream.zipAll(Stream(1, 2)).toList should be (List((Option(1), Option(1)), (Option(2), Option(2)), (Option(3), Option.empty), (Option(4), Option.empty)))
+
+  stream.startsWith(Stream(1, 2, 2)) should be (false)
+  stream.startsWith(Stream(2)) should be (false)
+  stream.startsWith(Stream(1, 2, 3, 4, 5)) should be (false)
+  stream.startsWith(Stream(1, 2)) should be (true)
+
+//  stream.startsWith2(Stream(1, 2, 2)) should be (false)
+//  stream.startsWith2(Stream(2)) should be (false)
+//  stream.startsWith2(Stream(1, 2, 3, 4, 5)) should be (false)
+//  stream.startsWith2(Stream(1, 2)) should be (true)
 }
