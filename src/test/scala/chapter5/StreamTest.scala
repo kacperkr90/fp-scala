@@ -69,4 +69,7 @@ class StreamTest extends FlatSpec with Matchers {
   stream.startsWith2(Stream(2)) should be (false)
   stream.startsWith2(Stream(1, 2, 3, 4, 5)) should be (false)
   stream.startsWith2(Stream(1, 2)) should be (true)
+
+  Stream(1, 2, 3).tails.map(_.toList).toList should be (List(List(1, 2, 3), List(2, 3), List(3), List()))
+
 }
