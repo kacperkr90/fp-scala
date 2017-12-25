@@ -94,10 +94,10 @@ sealed trait Stream[+A] {
       case _ => Option.empty
     }
 
-//  def startsWith[B >: A](s: Stream[B]): Boolean =
-//    this.zipAll(s).takeWhile(x => x.)
-
   def startsWith[B >: A](s: Stream[B]): Boolean =
+    this.zipAll(s).takeWhile(_._2.isDefined).forAll(x => x._1.exists(a => x._2.contains(a)))
+
+  def startsWith2[B >: A](s: Stream[B]): Boolean =
     this.zipAll(s).forAll(x => x._1.exists(a => x._2.isEmpty || x._2.contains(a)))
 
 //  def hasSubsequence[B >: A](sub: Stream[A]): Boolean =

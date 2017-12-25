@@ -65,8 +65,8 @@ class StreamTest extends FlatSpec with Matchers {
   stream.startsWith(Stream(1, 2, 3, 4, 5)) should be (false)
   stream.startsWith(Stream(1, 2)) should be (true)
 
-//  stream.startsWith2(Stream(1, 2, 2)) should be (false)
-//  stream.startsWith2(Stream(2)) should be (false)
-//  stream.startsWith2(Stream(1, 2, 3, 4, 5)) should be (false)
-//  stream.startsWith2(Stream(1, 2)) should be (true)
+  stream.startsWith2(Stream(1, 2, 2)) should be (false)
+  stream.startsWith2(Stream(2)) should be (false)
+  stream.startsWith2(Stream(1, 2, 3, 4, 5)) should be (false)
+  stream.startsWith2(Stream(1, 2)) should be (true)
 }
