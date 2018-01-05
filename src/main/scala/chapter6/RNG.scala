@@ -14,6 +14,9 @@ case class SimpleRNG(seed: Long) extends RNG {
 }
 
 object RNG {
+
+  type Rand[+A] = RNG => (A, RNG)
+
   def nonNegativeInt(rng: RNG): (Int, RNG) = rng.nextInt match {
     case (Int.MinValue, r) => (Int.MaxValue, r)
     case (i, r) if i >= 0 => (i, r)
@@ -54,6 +57,42 @@ object RNG {
     }
     go(List(), count, rng)
   }
+
+  def unit[A](a: A): Rand[A] =
+    rng => (a, rng)
+
+  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
+    rng => {
+      val (a, rng2) = s(rng)
+      (f(a), rng2)
+    }
+
+  def nonNegativeEven: Rand[Int] =
+    map(nonNegativeInt)(i => i - i % 2)
+
+  def double2(rng: RNG): Rand[Double] =
+    map(nonNegativeInt)(_.toDouble / Int.MaxValue)
+
+  // (rng -> (a, rng)) -> (rng -> (b, rng)) -> ((a, b) -> c) -> (rng -> (c, rng)
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+   rng => {
+     val (a, r) = ra(rng)
+     val (b, _) = rb(rng)
+     (f(a, b), r)
+   }
+
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
+    rng => {
+      fs.foldRight((List():List[A], rng))((s, res) => {
+        val (as, prevR) = res
+        val (a, nextR) = s(prevR)
+        (a::as, nextR)
+      })
+    }
+
+  def ints2(count: Int)(rng: RNG): (List[Int], RNG) =
+    (List(), rng)
+
 }
 
 object Program {
