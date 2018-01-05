@@ -49,7 +49,7 @@ object RNG {
 
   def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
     def go(l: List[Int], n: Int, r: RNG): (List[Int], RNG) = {
-      if (n >= 0) {
+      if (n > 0) {
         val (i, rr) = r.nextInt
         go(i::l, n - 1, rr)
       } else
@@ -60,6 +60,11 @@ object RNG {
 
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
+
+  def map[A,B](s: Rand[A])(f: A => B): Rand[B] = {
+
+  }
+
 
   def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
     rng => {
@@ -90,15 +95,27 @@ object RNG {
       })
     }
 
-  def ints2(count: Int)(rng: RNG): (List[Int], RNG) =
-    (List(), rng)
+  def sequence2[A](fs: List[Rand[A]]): Rand[List[A]] =
+    fs.foldRight(unit(List[A]()))((s, res) => map2(s, res)(_ :: _))
 
+  def ints2(count: Int)(rng: RNG): (List[Int], RNG) =
+    sequence(List.fill(count)(_.nextInt))(rng)
+
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+    rng => {
+      val (a, r) = f(rng)
+      g(a)(r)
+    }
+
+  def nonNegativeLessThan(n: Int): Rand[Int] =
+    flatMap(map(nonNegativeInt)(_ % n))(i => )
 }
 
 object Program {
   def main(args: Array[String]): Unit = {
     val rng = SimpleRNG(100)
     println(RNG.double(rng))
-    println(RNG.ints(10)(rng))
+    println(RNG.ints(3)(rng))
+    println(RNG.ints2(3)(rng))
   }
 }
