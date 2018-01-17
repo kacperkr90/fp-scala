@@ -19,13 +19,13 @@ object Machine {
   def insertInput(): Input => Machine => Machine =
     input => machine => (machine, input) match {
       case (Machine(_, c1, c2), _) if c1 <= 0 => machine
-      case (Machine(false, c1, c2), Coin) => Machine(true, c1, c2 + 1)
-      case (Machine(true, c1, c2), Turn) => Machine(false, c1 - 1, c2)
+      case (Machine(true, c1, c2), Coin) => Machine(false, c1, c2 + 1)
+      case (Machine(false, c1, c2), Turn) => Machine(true, c1 - 1, c2)
       case _ => machine
   }
 
   def main(args: Array[String]): Unit = {
-    val machine = Machine(false, 10, 0)
+    val machine = Machine(true, 10, 0)
     val state = Machine.simulateMachine(List(Coin, Turn, Coin, Turn))
     val tuple = state.run(machine)
     println(tuple)
