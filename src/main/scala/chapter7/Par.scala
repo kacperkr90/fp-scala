@@ -86,4 +86,11 @@ object Par {
 
   def map5[A, B, C, D, E, F](a: Par[A], b: Par[B], c: Par[C], d: Par[D], e: Par[E])(f: (A, B, C, D, E) => F): Par[F] =
     map2(a, map4(b, c, d, e)((bb, cc, dd, ee) => (aa: A) => f(aa, bb, cc, dd, ee)))((aa, g) => g(aa))
+
+  // EXERCISE 7.7
+  // map(map(y)(g))(f) == map(y)(f compose g)             || assuming map(y)(id) == y and g == id
+  // map(y)(f) == map(y)(f compose id)                    || assuming f: a -> b and g: a -> a, so:
+  //                                                      || f compose g is (a -> a) -> b which can be simplified to a -> b, which is f
+  // map(y)(f) == map(y)(f)
+
 }
