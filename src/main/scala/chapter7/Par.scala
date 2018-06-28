@@ -2,7 +2,6 @@ package chapter7
 
 import java.util.concurrent._
 
-
 object Par {
   type Par[A] = ExecutorService => Future[A]
 
@@ -92,5 +91,8 @@ object Par {
   // map(y)(f) == map(y)(f compose id)                    || assuming f: a -> b and g: a -> a, so:
   //                                                      || f compose g is (a -> a) -> b which can be simplified to a -> b, which is f
   // map(y)(f) == map(y)(f)
+
+  def delay[A](fa: => Par[A]): Par[A] =
+    es => fa(es)
 
 }
