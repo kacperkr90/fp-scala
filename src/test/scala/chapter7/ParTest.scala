@@ -24,4 +24,8 @@ class ParTest extends FlatSpec with Matchers {
   Par.map3(Par.unit(1), Par.unit(2), Par.unit(3))(_ + _ + _)(es).get should be (6)
   Par.map4(Par.unit(1), Par.unit(2), Par.unit(3), Par.unit(4))(_ + _ + _ + _)(es).get should be (10)
   Par.map5(Par.unit(1), Par.unit(2), Par.unit(3), Par.unit(4), Par.unit(5))(_ + _ + _ + _ + _)(es).get should be (15)
+
+  Par.choiceN(Par.unit(1))(List(Par.unit("a"), Par.unit("b"), Par.unit("c")))(es).get should be ("b")
+  Par.choiceViaChoiceN(Par.unit(false))(Par.unit("a"), Par.unit("b"))(es).get should be ("b")
+  Par.choiceViaChoiceN(Par.unit(true))(Par.unit("a"), Par.unit("b"))(es).get should be ("a")
 }

@@ -95,4 +95,21 @@ object Par {
   def delay[A](fa: => Par[A]): Par[A] =
     es => fa(es)
 
+  def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    es =>
+      if (run(es)(cond).get) t(es)
+      else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    es => {
+      val value = n(es).get
+      choices(value)(es)
+    }
+
+  def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    es => {
+      val n = map(cond)(flag => if (flag) 0 else 1)
+      choiceN(n)(List(t, f))(es)
+    }
+
 }
