@@ -28,4 +28,9 @@ class ParTest extends FlatSpec with Matchers {
   Par.choiceN(Par.unit(1))(List(Par.unit("a"), Par.unit("b"), Par.unit("c")))(es).get should be ("b")
   Par.choiceViaChoiceN(Par.unit(false))(Par.unit("a"), Par.unit("b"))(es).get should be ("b")
   Par.choiceViaChoiceN(Par.unit(true))(Par.unit("a"), Par.unit("b"))(es).get should be ("a")
+
+  Par.choiceViaChooser(Par.unit(false))(Par.unit("a"), Par.unit("b"))(es).get should be ("b")
+  Par.choiceViaChooser(Par.unit(true))(Par.unit("a"), Par.unit("b"))(es).get should be ("a")
+
+  Par.choiceNViaChooser(Par.unit(1))(List(Par.unit("a"), Par.unit("b"), Par.unit("c")))(es).get should be ("b")
 }
