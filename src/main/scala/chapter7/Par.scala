@@ -127,4 +127,13 @@ object Par {
   def choiceNViaChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
     es => chooser(n)(choices(_))(es)
 
+  def join[A](a: Par[Par[A]]): Par[A] =
+    es => a(es).get()(es)
+
+  def flatMapViaJoin[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
+    join(map(a)(f))
+
+  def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] =
+    flatMap(a)(aa => es => aa(es))
+
 }
