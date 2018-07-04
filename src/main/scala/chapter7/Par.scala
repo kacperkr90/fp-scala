@@ -136,4 +136,7 @@ object Par {
   def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] =
     flatMap(a)(aa => es => aa(es))
 
+  def map2ViaFlatMap[A,B,C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] =
+    flatMap(a)(aa => flatMap(b)(bb => unit(f(aa, bb))))
+
 }

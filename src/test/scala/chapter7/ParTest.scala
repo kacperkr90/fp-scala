@@ -36,4 +36,6 @@ class ParTest extends FlatSpec with Matchers {
 
   Par.flatMapViaJoin(Par.unit(2))(a => Par.unit(a * 2))(es).get should be (4)
   Par.joinViaFlatMap(Par.unit(Par.unit(2)))(es).get should be (2)
+
+  Par.map2ViaFlatMap(Par.unit(2), Par.unit(3))(_ * _)(es).get should be (6)
 }
