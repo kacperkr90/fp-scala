@@ -15,6 +15,4 @@ class Ch8Test extends Properties("Practicing properties") {
   val list1: Gen[List[Int]] = Gen.nonEmptyListOf(Gen.const(5))
   property("should find max number in non-empty list") = forAll(list1)(ns => ns.max == 5)
 
-  property("should throw exception on empty lists") = forAll(list)(ns => ns.max == Prop.exception)
-
 }
