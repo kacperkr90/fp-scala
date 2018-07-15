@@ -31,4 +31,16 @@ class GenTest extends Properties("Testing the testing") {
     ints.size == 5 && ints.forall(n => n >= -100 && n < 100)
   })
 
+  property("should generate pairs of integer") = forAll(seeds)(seed => {
+    val pair = Gen.choosePair(-10, 10).sample.run(SimpleRNG(seed))._1
+    val first = pair._1
+    val second = pair._2
+    (first >= -10 && first < 10) && (second >= -10 && second < 10)
+  })
+
+  property("should properly generate Gen[Option[A] from Gen[A]") = forAll(seeds)(seed => {
+    val g = Gen.choose(10, -10)
+    Option(g.sample.run(SimpleRNG(1))._1) == Gen.toOption(g).sample.run(SimpleRNG(1))._1
+  })
+
 }
