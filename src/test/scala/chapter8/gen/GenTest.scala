@@ -26,4 +26,9 @@ class GenTest extends Properties("Testing the testing") {
     Gen.unit(seed).sample.run(SimpleRNG(seed))._1 == seed
   })
 
+  property("should generate list of random values based on generator") = forAll(seeds)(seed => {
+    val ints = Gen.listOfN_0(5, Gen.choose(-100, 100)).sample.run(SimpleRNG(seed))._1
+    ints.size == 5 && ints.forall(n => n >= -100 && n < 100)
+  })
+
 }

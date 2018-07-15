@@ -12,8 +12,14 @@ object Gen {
   def unit[A](a: => A): Gen[A] =
     Gen(State.unit(a))
 
-//  def boolean: Gen[Boolean] =
+  def boolean: Gen[Boolean] =
+    Gen(State(SimpleRNG.nonNegativeInt).map(n => n % 2 == 0))
 
+  def listOfN_0[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    Gen(State(SimpleRNG.sequence(List.fill(n)(g.sample.run))))
+
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    Gen(State.sequence(List.fill(n)(g.sample)))
 
 }
 
