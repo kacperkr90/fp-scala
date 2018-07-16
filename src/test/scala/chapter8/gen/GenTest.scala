@@ -43,4 +43,12 @@ class GenTest extends Properties("Testing the testing") {
     Option(g.sample.run(SimpleRNG(1))._1) == Gen.toOption(g).sample.run(SimpleRNG(1))._1
   })
 
+  property("should properly flat map gen object") = forAll(seeds)(seed => {
+    Gen.choose(0, 10).flatMap(_ => Gen.unit(20)).sample.run(SimpleRNG(seed))._1 == 20
+  })
+
+  property("should properly generate random length list of randoms") = forAll(seeds)(seed => {
+    val ints: List[Int] = Gen.choose(5, 10).listOfN(Gen.choose(0, 5)).sample.run(SimpleRNG(seed))._1
+    (ints.length >= 0 && ints.length < 5) && ints.forall(n => n >= 5 && n < 10)
+  })
 }
