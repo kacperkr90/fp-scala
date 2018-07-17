@@ -43,6 +43,12 @@ object Gen {
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     Gen.boolean.flatMap(b => if (b) g1 else g2)
 
+  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] = {
+    val sum = g1._2 + g2._2
+    val t1 = g1._2 / sum
+    Gen(State(SimpleRNG.double)).flatMap(n => if (n < t1) g1._1 else g2._1)
+  }
+
 }
 
 object Program {
