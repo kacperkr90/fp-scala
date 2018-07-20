@@ -6,7 +6,21 @@ import chapter8.gen.Gen
 
 case class Prop(run: (TestCases,RNG) => Result) {
 
-  
+  def &&(p: Prop): Prop = Prop {
+    (n, rng) => (run(n, rng), p.run(n, rng)) match {
+      case (r1, _) if r1.isFalsified => r1
+      case (_, r2) if r2.isFalsified => r2
+      case _ => Passed
+    }
+  }
+
+  def ||(p: Prop): Prop = Prop {
+    (n, rng) => (run(n, rng), p.run(n, rng)) match {
+      case (r1, _) if !r1.isFalsified => Passed
+      case (_, r2) if !r2.isFalsified => Passed
+      case (Falsified(f1, s1), Falsified(f2, s2)) => Falsified(s"($f1, $f2)", s1 + s2)
+    }
+  }
 }
 
 object Prop {
