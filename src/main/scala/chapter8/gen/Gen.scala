@@ -7,6 +7,9 @@ case class Gen[A](sample: State[RNG,A]) {
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(f(_).sample))
 
+  def map[B](f: A => B): Gen[B] =
+    flatMap(a => Gen.unit(f(a)))
+
   def listOfN(size: Gen[Int]): Gen[List[A]] =
     size.flatMap(n => Gen.listOfN(n, this))
 
@@ -54,7 +57,20 @@ object Gen {
 
 }
 
-case class SGen[+A](forSize: Int => Gen[A])
+case class SGen[+A](forSize: Int => Gen[A]) {
+
+  def flatMap[B](f: A => SGen[B]): SGen[B] =
+    SGen(n => forSize(n).flatMap(f(_).forSize(n)))
+
+  def mapViaFlatMap[B](f: A => B): SGen[B] =
+    flatMap(a => SGen(x => Gen.unit(f(a))))
+
+  def map[B](f: A => B): SGen[B] =
+    SGen(forSize.andThen(_.map(f(_))))
+
+  def mapP2p[B](f: A => B): SGen[B] =
+
+}
 
 object Program {
   def main(args: Array[String]): Unit = {
