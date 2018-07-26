@@ -71,6 +71,9 @@ case class SGen[+A](forSize: Int => Gen[A]) {
   def mapViaFreePointStyle[B](f: A => B): SGen[B] =
     SGen { forSize(_) map f }
 
+  def listOf(g: Gen[A]): SGen[List[A]] =
+    SGen { Gen.listOfN(_, g) }
+
 }
 
 object Program {
