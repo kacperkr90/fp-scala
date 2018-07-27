@@ -57,7 +57,7 @@ object Gen {
 
 }
 
-case class SGen[+A](forSize: Int => Gen[A]) {
+case class SGen[A](forSize: Int => Gen[A]) {
 
   def flatMap[B](f: A => SGen[B]): SGen[B] =
     SGen(n => forSize(n).flatMap(f(_).forSize(n)))
@@ -71,7 +71,11 @@ case class SGen[+A](forSize: Int => Gen[A]) {
   def mapViaFreePointStyle[B](f: A => B): SGen[B] =
     SGen { forSize(_) map f }
 
-  def listOf(g: Gen[A]): SGen[List[A]] =
+}
+
+object SGen {
+
+  def listOf[A](g: Gen[A]): SGen[List[A]] =
     SGen { Gen.listOfN(_, g) }
 
 }
