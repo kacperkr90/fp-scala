@@ -60,16 +60,25 @@ trait MyParsers[ParseError, Parser[+_]] {self =>
   run(numberOfA())("b123") == Right(0)
 
   def int(a: Int): Parser[Int]
+  def asError(s: String): ParseError
   def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
-//  def numberOfA1(): Parser[Int] = numberOfA().flatMap(i =>
-//    if (i < 1) int(i)
-//    else failed(int(i))(""))
+  def numberOfA1(): Parser[Int] = numberOfA().flatMap(i =>
+    if (i < 1) int(i)
+    else failed(int(i))(asError("Expected one or more 'a'")))
 
-//  run(numberOfA1())("aa") == Right(2)
-//  run(numberOfA1())("") == Left("Expected one or more 'a'")
-//  run(numberOfA1())("b123") == Left("Expected one or more 'a'")
+  run(numberOfA1())("aa") == Right(2)
+  run(numberOfA1())("") == Left("Expected one or more 'a'")
+  run(numberOfA1())("b123") == Left("Expected one or more 'a'")
 
   def failed[A](p: Parser[A])(error: ParseError): Parser[A]
+
+  def aFollowedByB(): Parser[(Int, Int)]
+//    (char('a') | char('b'))
+//    .recognitions
+//    .map(list => list.foldRight((((0, 0), true)))((char, tuple) => if (!tuple._2) tuple._2) else )
+
+  run(aFollowedByB())("bbb") == Right((0, 3))
+  run(aFollowedByB())("aaaab") == Right((4, 1))
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
