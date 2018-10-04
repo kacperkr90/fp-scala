@@ -24,6 +24,11 @@ object SimpleRNG {
     case (i, r) => (Math.abs(i), r)
   }
 
+  def boolean(rng: RNG): (Boolean, RNG) = {
+    val (i, r) = rng.nextInt
+    (i % 2 == 0, r)
+  }
+
   def double(rng: RNG): (Double, RNG) = {
     val (i, r) = nonNegativeInt(rng)
     val d = i.toDouble / Int.MaxValue
