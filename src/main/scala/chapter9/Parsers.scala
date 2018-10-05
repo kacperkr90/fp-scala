@@ -29,18 +29,34 @@ trait Parsers[ParseError, Parser[+_]] {self =>
   def many[A](p: Parser[A]): Parser[List[A]]
   def map[A, B](p: Parser[A])(f: A => B): Parser[B]
 
-  val numA: Parser[Int] = char('a').many.map(_.size)
+  val numA: Parser[Int] = char('a').many.slice.map(_.length)
   run(numA)("aaa") == Right(3)
   run(numA)("b") == Right(0)
 
   def succeed[A](a: A): Parser[A] =
     string("").map(_ => a)
 
+  def slice[A](p: Parser[A]): Parser[String]
+  run(slice(("a" | "b").many))("aaba") == Right("aaba")
+
+  def product[A, B](p: Parser[A], p2: Parser[B]): Parser[(A, B)]
+
+  def map2[A, B, C](p1: Parser[A], p2: Parser[B])(f: (A, B) => C): Parser[C] =
+    (p1 ** p2).map(f(_))
+
+  def many1[A](p: Parser[A]): Parser[List[A]] =
+    map2(p, many(p))(_ :: _)
+
+  def productViaMap2[A, B](p: Parser[A], p2: Parser[B]): Parser[(A, B)] =
+    map2(p, p2)((_, _))
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
     def or[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
     def many: Parser[List[A]] = self.many(p)
     def map[B](f: A => B): Parser[B] = self.map(p)(f)
+    def slice: Parser[String] = self.slice(p)
+    def **[B](p2: Parser[B]): Parser[(A, B)] = self.product(p, p2)
   }
 
   object Laws {
@@ -52,6 +68,12 @@ trait Parsers[ParseError, Parser[+_]] {self =>
 
     def succeedLaw[A](a: A)(in: Gen[String]): Prop =
       forAll(in)(s => run(succeed(a))(s) == Right(a))
+
+    def sliceLaw[A](p: Parser[A])(in: Gen[String]): Prop =
+      forAll(in)(s => run(p.many.slice)(s) == Right(s))
+
+    def productLaw[A, B](p1: Parser[A], p2: Parser[B])(in: Gen[String]): Prop =
+      equal()
   }
 }
 
