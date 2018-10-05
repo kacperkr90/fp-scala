@@ -42,7 +42,7 @@ trait Parsers[ParseError, Parser[+_]] {self =>
   def product[A, B](p: Parser[A], p2: Parser[B]): Parser[(A, B)]
 
   def map2[A, B, C](p1: Parser[A], p2: Parser[B])(f: (A, B) => C): Parser[C] =
-    (p1 ** p2).map(f(_))
+    (p1 ** p2).map(f.tupled)
 
   def many1[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _)
@@ -73,7 +73,13 @@ trait Parsers[ParseError, Parser[+_]] {self =>
       forAll(in)(s => run(p.many.slice)(s) == Right(s))
 
     def productLaw[A, B](p1: Parser[A], p2: Parser[B])(in: Gen[String]): Prop =
-      equal()
+      forAll(in)(s => {
+        val v1 = run(p1)(s)
+        val v2 = run(p2)(s)
+        val r = run(p1 ** p2)(s)
+        ((v1.isLeft || v2.isLeft) && r.isLeft) || (v1.isRight && v2.isRight && r.isRight)
+      })
+
   }
 }
 
