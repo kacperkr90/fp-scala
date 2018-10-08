@@ -33,7 +33,8 @@ trait Parsers[ParseError, Parser[+_]] {self =>
   def many[A](p: Parser[A]): Parser[List[A]] =
     map2(p, many(p))(_ :: _) | succeed(List(): List[A])
 
-  def map[A, B](p: Parser[A])(f: A => B): Parser[B]
+  def map[A, B](p: Parser[A])(f: A => B): Parser[B] =
+    p.flatMap(a => succeed(f(a)))
 
   val numA: Parser[Int] = char('a').many.slice.map(_.length)
   run(numA)("aaa") == Right(3)
@@ -61,6 +62,15 @@ trait Parsers[ParseError, Parser[+_]] {self =>
   def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
   implicit def regex(r: Regex): Parser[String]
+
+  def productViaFlatMap[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] =
+    p.flatMap(a => p2.flatMap(b => succeed((a, b))))
+
+  def map2ViaFlatMap[A, B, C](p1: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
+    p1.flatMap(a => p2.flatMap(b => succeed(f(a, b))))
+
+  def digit(a: Int): Parser[Int]
+//    regex("[0-9]".r).map(Int.)
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -93,6 +103,11 @@ trait Parsers[ParseError, Parser[+_]] {self =>
         ((v1.isLeft || v2.isLeft) && r.isLeft) || (v1.isRight && v2.isRight && r.isRight)
       })
 
+    def flatMapLaw[A, B](p: Parser[A])(in: Gen[String]): Prop =
+      equal(p, p.flatMap(a => succeed(a)))(in)
+
+    def stringLaw(p: Parser[String])(in: Gen[String]): Prop =
+      forAll(in)(s => run(p)(s) == succeed(s))
   }
 }
 
