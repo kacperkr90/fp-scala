@@ -68,9 +68,6 @@ trait Parsers[ParseError, Parser[+_]] {self =>
 
   implicit def regex(r: Regex): Parser[String]
 
-  def digit(a: Int): Parser[Int]
-//    regex("[0-9]".r).map(Int.)
-
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
     def or[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
