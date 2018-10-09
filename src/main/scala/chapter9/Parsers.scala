@@ -115,6 +115,12 @@ trait Parsers[ParseError, Parser[+_]] {self =>
         val r = run(p1 | p2)(s)
         (v1.isLeft && v2.isLeft && r.isLeft) || (v1 == r) || (v2 == r)
       })
+
+    def regexLaw(r: Regex)(in: Gen[String]): Prop =
+      forAll(in)(s => r
+        .findFirstIn(s)
+        .forall(m => run(regex(r))(s) == Right(m))
+      )
   }
 }
 
