@@ -44,11 +44,16 @@ trait Parsers[ParseError, Parser[+_]] {self =>
     string("").map(_ => a)
 
   def slice[A](p: Parser[A]): Parser[String]
+  
   run(slice(("a" | "b").many))("aaba") == Right("aaba")
 
-  def product[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)]
+  def product[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] =
+    p.flatMap(a => p2.flatMap(b => succeed((a, b))))
 
   def map2[A, B, C](p1: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
+    p1.flatMap(a => p2.flatMap(b => succeed(f(a, b))))
+
+  def map2ViaProduct[A, B, C](p1: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
     (p1 ** p2).map(f.tupled)
 
   def many1[A](p: Parser[A]): Parser[List[A]] =
@@ -62,12 +67,6 @@ trait Parsers[ParseError, Parser[+_]] {self =>
   def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
   implicit def regex(r: Regex): Parser[String]
-
-  def productViaFlatMap[A, B](p: Parser[A], p2: => Parser[B]): Parser[(A, B)] =
-    p.flatMap(a => p2.flatMap(b => succeed((a, b))))
-
-  def map2ViaFlatMap[A, B, C](p1: Parser[A], p2: => Parser[B])(f: (A, B) => C): Parser[C] =
-    p1.flatMap(a => p2.flatMap(b => succeed(f(a, b))))
 
   def digit(a: Int): Parser[Int]
 //    regex("[0-9]".r).map(Int.)
@@ -100,14 +99,22 @@ trait Parsers[ParseError, Parser[+_]] {self =>
         val v1 = run(p1)(s)
         val v2 = run(p2)(s)
         val r = run(p1 ** p2)(s)
-        ((v1.isLeft || v2.isLeft) && r.isLeft) || (v1.isRight && v2.isRight && r.isRight)
+        (v1.isLeft && v2.isLeft && r.isLeft) || (Right((v1, v2)) == r)
       })
 
     def flatMapLaw[A, B](p: Parser[A])(in: Gen[String]): Prop =
-      equal(p, p.flatMap(a => succeed(a)))(in)
+      equal(p, p.flatMap(_ => p))(in)
 
-    def stringLaw(p: Parser[String])(in: Gen[String]): Prop =
-      forAll(in)(s => run(p)(s) == succeed(s))
+    def stringLaw(in: Gen[String]): Prop =
+      forAll(in)(s => run(string(s))(s) == Right(s))
+
+    def orLaw[A](p1: Parser[A], p2: Parser[A])(in: Gen[String]): Prop =
+      forAll(in)(s => {
+        val v1 = run(p1)(s)
+        val v2 = run(p2)(s)
+        val r = run(p1 | p2)(s)
+        (v1.isLeft && v2.isLeft && r.isLeft) || (v1 == r) || (v2 == r)
+      })
   }
 }
 
