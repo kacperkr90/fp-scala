@@ -9,10 +9,31 @@ object JSON {
   case class JArray(get: IndexedSeq[JSON]) extends JSON
   case class JObject(get: Map[String, JSON])
 
-  def jsonParser[Err,Parser[+_]](P: Parsers[Err,Parser]): Parser[JSON] = {
+  def jsonParser[Err,Parser[+_]](P: MyParsers[Err,Parser]): Parser[JSON] = {
     import P._
     val spaces = char(' ').many.slice
-    
+
+    val jnull: Parser[JSON] = string("null").map(_ => JNull)
+
+    val jdouble: Parser[JSON] = regex("\\d+(\\.\\d+)?".r)
+      .map(_.toDouble)
+      .map(JNumber)
+
+    val vstring: Parser[String] = regex("\".*\"".r)
+    val jstring: Parser[JSON] = regex("\".*\"".r)
+      .map(JString)
+
+    val jbool: Parser[JSON] = ("true" | "false")
+      .map(_.toBoolean)
+      .map(JBool)
+
+    val jarray
+
+    val anyJPrimitive = jnull | jdouble | jstring | jbool |
+
+    val entry: (String, JSON) = map5(vstring, spaces, colon(), spaces, )
+
+
   }
 
 }
