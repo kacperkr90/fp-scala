@@ -3,6 +3,7 @@ package chapter9
 import chapter8.Prop
 import chapter8.gen.Gen
 import Prop._
+import chapter9.JSON._
 
 import scala.util.matching.Regex
 
@@ -191,8 +192,6 @@ trait MyParsers[ParseError, Parser[+_]] {self =>
 
   def map5[A, B, C, D, E, F](p1: Parser[A], p2: Parser[B], p3: Parser[C], p4: Parser[D], p5: Parser[E])(f: (A, B, C, D, E) => F): Parser[F] =
     map4(p1, p2, p3, map2(p4, p5)((d, e) => (a: A, b: B, c: C) => f(a, b, c, d, e)))((a, b, c, g) => g(a, b, c))
-
-  def colon(): Parser[Char] = char(':')
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
