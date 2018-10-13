@@ -11,7 +11,7 @@ object JSON {
 
   def myJsonParser[Err,Parser[+_]](P: MyParsers[Err,Parser]): Parser[JSON] = {
     import P._
-    val spaces = char(' ').many.slice
+    val spaces = char(' ').many
 
     def surrounded[A, B](p1: Parser[A], p2: Parser[B], p3: Parser[A]): Parser[B] =
       map3(p1, p2, p3)((_, p, _) => p)
@@ -19,30 +19,33 @@ object JSON {
     def surroundedBySpaces[A](p: Parser[A]): Parser[A] =
       surrounded(spaces, p, spaces)
 
-    def surrounded[A](c: Char, p: Parser[A], c2: Char): Parser[A] =
+    def surroundedByChar[A](c: Char, p: Parser[A], c2: Char): Parser[A] =
       surrounded(surroundedBySpaces(char(c)), p, surroundedBySpaces(char(c2)))
 
     val colon: Parser[Char] = surroundedBySpaces(char(':'))
     val comma: Parser[Char] = surroundedBySpaces(char(','))
 
-    def JPrimitive: Parser[JSON] = jnull | jdouble | jstring | jbool | jarray | jobject
+    def JPrimitive: Parser[JSON] = jNull | jDouble | jString | jBool | jArray | jObject
 
-    def jnull: Parser[JSON] = string("null").map(_ => JNull)
+    def jNull: Parser[JSON] = string("null").map(_ => JNull)
 
-    def jdouble: Parser[JSON] = regex("\\d+(\\.\\d+)?".r)
+    def jDouble: Parser[JSON] = regex("\\d+(\\.\\d+)?".r)
       .map(_.toDouble)
       .map(JNumber)
 
-    def vstring: Parser[String] = regex("\".*\"".r)
-    def jstring: Parser[JSON] = regex("\".*\"".r)
+    def vString: Parser[String] = regex("\".*\"".r)
+    def jString: Parser[JSON] = regex("\".*\"".r)
       .map(JString)
 
-    def jbool: Parser[JSON] = ("true" | "false")
+    def jBool: Parser[JSON] = ("true" | "false")
       .map(_.toBoolean)
       .map(JBool)
 
-    def jarray: Parser[JSON] = surrounded('[', commaSeparatedJsons, ']')
-      .map(array => JArray(array.toIndexedSeq))
+    def emptyJArray: Parser[JSON] = surrounded(char('['), spaces, char(']'))
+      .map(_ => JArray(IndexedSeq()))
+
+    def jArray: Parser[JSON] = surroundedByChar('[', commaSeparatedJsons, ']')
+      .map(array => JArray(array.toIndexedSeq)) | emptyJArray
 
     def commaSeparated[A](p: Parser[A]): Parser[List[A]] =
       map2(p, commaPrependedParsers(p))(_ :: _)
@@ -55,16 +58,19 @@ object JSON {
     def commaSeparatedJsons: Parser[List[JSON]] =
       commaSeparated(JPrimitive)
 
-    def jobject: Parser[JSON] = surrounded('{', commaSeparatedMapEntries, '}')
+    def emptyJObject: Parser[JSON] = surrounded(char('{'), spaces, char('}'))
+      .map(_ => JObject(Map()))
+
+    def jObject: Parser[JSON] = surroundedByChar('{', commaSeparatedMapEntries, '}')
       .map(_.toMap)
-      .map(map => JObject(map))
+      .map(map => JObject(map)) | emptyJObject
 
     def commaSeparatedMapEntries: Parser[List[(String, JSON)]] =
       commaSeparated(mapEntry)
 
-    def mapEntry: Parser[(String, JSON)] = map3(vstring, colon, JPrimitive)((key, _, value) => (key, value))
+    def mapEntry: Parser[(String, JSON)] = map3(vString, colon, JPrimitive)((key, _, value) => (key, value))
 
-    jobject | jarray
+    jObject | jArray
   }
 
 }
