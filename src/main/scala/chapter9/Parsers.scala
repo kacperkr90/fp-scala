@@ -1,13 +1,13 @@
 package chapter9
 
 import chapter8.Prop
+import chapter8.Prop._
 import chapter8.gen.Gen
-import Prop._
-import chapter9.JSON._
+import org.scalactic.ErrorMessage
 
 import scala.util.matching.Regex
 
-trait Parsers[ParseError, Parser[+_]] {self =>
+trait Parsers[Parser[+_]] {self =>
 
   def run[A](p: Parser[A])(input: String): Either[ParseError, A]
   def char(c: Char): Parser[Char] = string(c.toString).map(_.charAt(0))
@@ -69,6 +69,19 @@ trait Parsers[ParseError, Parser[+_]] {self =>
 
   implicit def regex(r: Regex): Parser[String]
 
+  def label[A](msg: String)(p: Parser[A]): Parser[A]
+
+  def errorLocation(e: ParseError): Location
+  def errorMessage(e: ErrorMessage): Location
+
+  val p = label("first magic word")("abra") **
+    " ".many **
+    label("second magic word")("cadabra")
+
+  def scope[A](msg: String)(p: Parser[A]): Parser[A]
+
+  def attempt[A](p: Parser[A]): Parser[A]
+
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
     def or[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -119,6 +132,16 @@ trait Parsers[ParseError, Parser[+_]] {self =>
         .findFirstIn(s)
         .forall(m => run(regex(r))(s) == Right(m))
       )
+  }
+}
+
+case class ParseError(stack: List[(Location, String)])
+
+case class Location(input: String, offset: Int = 0) {
+  lazy val line = input.slice(0, offset + 1).count(_ == '\n') + 1
+  lazy val col = input.slice(0, offset + 1).lastIndexOf('\n') match {
+    case -1 => offset + 1
+    case lineStart => offset - lineStart
   }
 }
 
