@@ -135,7 +135,19 @@ trait Parsers[Parser[+_]] {self =>
   }
 }
 
-case class ParseError(stack: List[(Location, String)])
+case class ParseError(stack: List[(Location, String)]) {
+  def push(loc: Location, msg: String): ParseError =
+    copy(stack = (loc,msg) :: stack)
+
+  def label[A](s: String): ParseError =
+    ParseError(latestLoc.map((_, s)).toList)
+
+  def latestLoc: Option[Location] =
+    latest map (_._1)
+
+  def latest: Option[(Location, String)] =
+    stack.lastOption
+}
 
 case class Location(input: String, offset: Int = 0) {
   lazy val line = input.slice(0, offset + 1).count(_ == '\n') + 1
@@ -146,6 +158,9 @@ case class Location(input: String, offset: Int = 0) {
 
   def toError(msg: String): ParseError =
     ParseError(List((this, msg)))
+
+  def advanceBy(n: Int): Location =
+    copy(offset = offset+n)
 }
 
 trait MyParsers[ParseError, Parser[+_]] {self =>
