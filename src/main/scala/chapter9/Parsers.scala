@@ -41,8 +41,10 @@ trait Parsers[Parser[+_]] {self =>
   run(numA)("aaa") == Right(3)
   run(numA)("b") == Right(0)
 
-  def succeed[A](a: A): Parser[A] =
+  def succeedViaMap[A](a: A): Parser[A] =
     string("").map(_ => a)
+
+  def succeed[A](a: A): Parser[A]
 
   def slice[A](p: Parser[A]): Parser[String]
   
@@ -80,7 +82,10 @@ trait Parsers[Parser[+_]] {self =>
 
   def scope[A](msg: String)(p: Parser[A]): Parser[A]
 
-  def attempt[A](p: Parser[A]): Parser[A]
+  def attempt[A](p: => Parser[A]): Parser[A]
+
+  def map3[A, B, C, D](p1: Parser[A], p2: Parser[B], p3: Parser[C])(f: (A, B, C) => D): Parser[D] =
+    map2(p1, map2(p2, p3)((b, c) => (a: A) => f(a,b,c)))((a, g) => g(a))
 
   case class ParserOps[A](p: Parser[A]) {
     def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p, p2)
@@ -90,6 +95,7 @@ trait Parsers[Parser[+_]] {self =>
     def slice: Parser[String] = self.slice(p)
     def **[B](p2: Parser[B]): Parser[(A, B)] = self.product(p, p2)
     def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
+    def scope(msg: String): Parser[A] = self.scope(msg)(p)
   }
 
   object Laws {
