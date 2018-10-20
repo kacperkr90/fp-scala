@@ -34,20 +34,20 @@ object JSON {
       .map(_.toDouble)
       .map(JNumber)
 
-    def vString: Parser[String] = "\".*\"".r
-    def jString: Parser[JSON] = regex("\".*\"".r)
+    def vString: Parser[String] = "\".+?\"".r
+
+    def jString: Parser[JSON] = vString
       .map(JString)
 
-    def jBool: Parser[JSON] = ("\"true\"" | "\"false\"")
-      .map(s => s.replaceAll("\"", ""))
+    def jBool: Parser[JSON] = ("true" | "false")
       .map(_.toBoolean)
       .map(JBool)
 
-    def emptyJArray: Parser[JSON] = surrounded(char('['), spaces, char(']'))
+    def emptyJArray: Parser[JSON] = surroundedByChar('[', spaces, ']')
       .map(_ => JArray(IndexedSeq()))
 
-    def jArray: Parser[JSON] = attempt(surroundedByChar('[', commaSeparatedJsons, ']')
-      .map(array => JArray(array.toIndexedSeq))) | emptyJArray
+    def jArray: Parser[JSON] = attempt(surroundedByChar('[', commaSeparatedJsons, ']'))
+      .map(array => JArray(array.toIndexedSeq)) | emptyJArray
 
     def commaSeparated[A](p: Parser[A]): Parser[List[A]] =
       map2(p, commaPrependedParsers(p))(_ :: _)
@@ -61,16 +61,17 @@ object JSON {
     def emptyJObject: Parser[JSON] = surroundedByChar('{', spaces, '}')
       .map(_ => JObject(Map()))
 
-    def jObject: Parser[JSON] = attempt(surroundedByChar('{', commaSeparatedMapEntries, '}')
+    def jObject: Parser[JSON] = attempt(surroundedByChar('{', commaSeparatedMapEntries, '}'))
       .map(_.toMap)
-      .map(map => JObject(map))) | emptyJObject
+      .map(map => JObject(map))
 
     def commaSeparatedMapEntries: Parser[List[(String, JSON)]] =
-      commaSeparated(mapEntry)
+      commaSeparated(surroundedBySpaces(mapEntry))
 
-    def mapEntry: Parser[(String, JSON)] = map3(vString, colon, JPrimitive)((key, _, value) => (key, value))
+    def mapEntry: Parser[(String, JSON)] =
+      map3(vString, colon, JPrimitive)((key, _, value) => (key, value))
 
-    attempt(jArray) | jObject
+    attempt(jObject) | jArray
   }
 
 }

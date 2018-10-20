@@ -71,7 +71,7 @@ object TheParsers extends Parsers[Parser] {
         Success(s, s.length)
       else{
         val l = location.advanceBy(i)
-        Failure(l.toError("Expected " + s + " at line " + l.line + ", column " + l.col), i != 0)
+        Failure(l.toError("Expected '" + s + "' at line " + l.line + ", column " + l.col), i != 0)
       }
     }
 
@@ -94,7 +94,7 @@ object TheParsers extends Parsers[Parser] {
   override implicit def regex(r: Regex): Parser[String] = {
     val msg = "regex " + r
     s => r.findPrefixOf(s.input.substring(s.offset)) match {
-      case None => Failure(s.toError(msg + " at line " + s.line + ", column " + s.col), isCommitted = false)
+      case None => Failure(s.toError(msg + " at line " + s.line + ", column " + s.col + ", offset " + s.offset), isCommitted = false)
       case Some(m) => Success(m,m.length)
     }
   }
@@ -136,20 +136,10 @@ object Program {
     val parsers = TheParsers
     val parser = JSON.myJsonParser(parsers)
 
-    val jsonTxt = """
-{
-  "Company name" : "Microsoft Corporation",
-  "Ticker"  : "MSFT",
-  "Active"  : true,
-  "Price"   : 30.66,
-  "Shares outstanding" : 8.38e9,
-  "Related companies" : [ "HPQ", "IBM", "YHOO", "DELL", "GOOG" ]
-}
-"""
+    val jsonTxt = """{"Company name" : "Microsoft Corporation", "Ticker"  : "MSFT",  "Active"  : true,  "Price"   : 30.66,  "Shares outstanding" : 8.38,  "Related companies" : [ "HPQ", "IBM", "YHOO", "DELL", "GOOG"]}"""
 
     val jsonTxt2 =
-      """{"dupa": 1}""".stripMargin
-
+      """ {"Company name" : "Microsoft Corporation", "gsd" : "d" }""".stripMargin
     println(parsers.run(parser)(jsonTxt))
   }
 }
