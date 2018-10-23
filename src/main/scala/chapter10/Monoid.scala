@@ -1,5 +1,9 @@
 package chapter10
 
+import chapter6.SimpleRNG
+import chapter8.Prop
+import chapter8.gen.Gen
+
 trait Monoid[A] {
 
   def op(a1: A, a2: A): A
@@ -48,5 +52,34 @@ object Monoid {
     override def zero: A => A = identity
   }
 
+  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = {
+    import m._
+
+    def zeroLaw:Prop = Prop.forAll(gen)(a => op(a, zero) == a)
+    def opLaw: Prop = Prop.forAll(Gen.listOfN(3, gen)){ case x::y::z::Nil => op(op(x, y), z) == op(x, op(y, z))}
+
+    zeroLaw && opLaw
+  }
+
+  def concatenated[A](as: List[A], m: Monoid[A]): A =
+    as.foldLeft(m.zero)(m.op)
+
+  def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    concatenated(as.map(f), m)
+
+  def foldLeftViaFoldMap[A, B](as: List[A], z: B)(f: (B, A) => B): B =
+    foldMap(as, endoMonoid[B])(a => b => f(b, a))(z)
+
+  def foldRightViaFoldMap[A,B](as: List[A], z: B)(f: (A, B) => B): B =
+    foldMap(as, endoMonoid[B])(a => b => f(a, b))(z)
+
+  def main(args: Array[String]): Unit = {
+    // (((0 - 1) - 2) - 3)
+    println(List(1, 2, 3).foldLeft(0)(_ - _))
+    println(foldLeftViaFoldMap(List(1, 2, 3), 0)(_ - _))
+    // (1 - (2 - (3 - 0)))
+    println(List(1, 2, 3).foldRight(0)(_ - _))
+    println(foldRightViaFoldMap(List(1, 2, 3), 0)(_ - _))
+  }
 
 }

@@ -41,6 +41,9 @@ object Gen {
   def toOption[A](g: Gen[A]): Gen[Option[A]] =
     Gen(g.sample.map(Option.apply))
 
+  def chooseOption[A](g: Gen[A]): Gen[Option[A]] =
+    boolean.flatMap(f => if (f) toOption(g) else unit(None))
+
   def chooseString(length: Int, startLetter: Char, stopLetterExclusive: Char): Gen[String] = {
     val state = listOfN(length, Gen.choose(Char.char2int(startLetter), Char.char2int(stopLetterExclusive))).sample
     Gen(state.map(ns => ns.map(_.toChar)).map(cs => cs.mkString))
