@@ -1,8 +1,11 @@
 package chapter10
 
-import chapter6.SimpleRNG
+import java.util.concurrent.Executors
+
 import chapter8.Prop
 import chapter8.gen.Gen
+import chapter7.nonblocking.Nonblocking._
+
 
 trait Monoid[A] {
 
@@ -73,6 +76,21 @@ object Monoid {
   def foldRightViaFoldMap[A,B](as: List[A], z: B)(f: (A, B) => B): B =
     foldMap(as, endoMonoid[B])(a => b => f(a, b))(z)
 
+  def foldMapV[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): B = v.splitAt(v.size / 2) match {
+    case (Seq(a), Seq()) => f(a)
+    case (Seq(), Seq(a)) => f(a)
+    case (Seq(a1), Seq(b1)) => m.op(f(a1), f(b1))
+    case (v1, v2) => m.op(foldMapV(v1, m)(f), foldMapV(v2, m)(f))
+  }
+
+  def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
+    override def op(a1: Par[A], a2: Par[A]): Par[A] = map2(a1, a2)(m.op)
+    override def zero: Par[A] = lazyUnit(m.zero)
+  }
+
+  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B]  =
+    foldMapV(v, par(m))(asyncF(f))
+
   def main(args: Array[String]): Unit = {
     // (((0 - 1) - 2) - 3)
     println(List(1, 2, 3).foldLeft(0)(_ - _))
@@ -80,6 +98,11 @@ object Monoid {
     // (1 - (2 - (3 - 0)))
     println(List(1, 2, 3).foldRight(0)(_ - _))
     println(foldRightViaFoldMap(List(1, 2, 3), 0)(_ - _))
+    println(foldMapV(IndexedSeq(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), intAddition)(identity))
+    println(run(Executors.newFixedThreadPool(2))(parFoldMap(IndexedSeq(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), intAddition)(a => {
+      println(a)
+      a
+    })))
   }
 
 }
