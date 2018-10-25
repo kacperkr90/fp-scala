@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import chapter8.Prop
 import chapter8.gen.Gen
-import chapter7.nonblocking.Nonblocking._
+import chapter7.Par._
 
 
 trait Monoid[A] {
@@ -89,7 +89,18 @@ object Monoid {
   }
 
   def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B]  =
-    foldMapV(v, par(m))(asyncF(f))
+    flatMap(parMap(v.toList)(asyncF(f))) {
+      list => foldMapV(list.toIndexedSeq, par(m))(identity)
+    }
+
+  def orderedMonoid: Monoid[Int => Boolean] = new Monoid[Int => Boolean] {
+    override def op(a1: Int => Boolean, a2: Int => Boolean): Int => Boolean = ???
+
+    override def zero: Int => Boolean = ???
+  }
+
+  def ordered(xs: IndexedSeq[Int]): Boolean =
+    foldMap(xs.toList, orderedMonoid)(curr => (f: Int => Int => Boolean) => f(curr, ))
 
   def main(args: Array[String]): Unit = {
     // (((0 - 1) - 2) - 3)
@@ -99,10 +110,13 @@ object Monoid {
     println(List(1, 2, 3).foldRight(0)(_ - _))
     println(foldRightViaFoldMap(List(1, 2, 3), 0)(_ - _))
     println(foldMapV(IndexedSeq(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), intAddition)(identity))
-    println(run(Executors.newFixedThreadPool(2))(parFoldMap(IndexedSeq(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), intAddition)(a => {
-      println(a)
-      a
-    })))
+    val service = Executors.newFixedThreadPool(2)
+    println(run(service)(parFoldMap(IndexedSeq.range(0, 100), intAddition)(identity)))
+    service.shutdownNow()
+
+    println(ordered(IndexedSeq(1, 2, 3, 4, 5)))
+    println(ordered(IndexedSeq(1, 2, 4, 4, 5)))
+    println(ordered(IndexedSeq(1, 2, 5, 4, 5)))
   }
 
 }
