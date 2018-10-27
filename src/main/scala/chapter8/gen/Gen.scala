@@ -2,7 +2,7 @@ package chapter8.gen
 
 import chapter6.{RNG, SimpleRNG, State}
 
-case class Gen[A](sample: State[RNG,A]) {
+case class Gen[+A](sample: State[RNG,A]) {
 
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(f(_).sample))
@@ -60,7 +60,7 @@ object Gen {
 
 }
 
-case class SGen[A](forSize: Int => Gen[A]) {
+case class SGen[+A](forSize: Int => Gen[A]) {
 
   def flatMap[B](f: A => SGen[B]): SGen[B] =
     SGen(n => forSize(n).flatMap(f(_).forSize(n)))
