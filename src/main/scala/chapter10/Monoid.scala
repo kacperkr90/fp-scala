@@ -93,14 +93,70 @@ object Monoid {
       list => foldMapV(list.toIndexedSeq, par(m))(identity)
     }
 
-  def orderedMonoid: Monoid[Int => Boolean] = new Monoid[Int => Boolean] {
-    override def op(a1: Int => Boolean, a2: Int => Boolean): Int => Boolean = ???
+  def orderedMonoid: Monoid[Option[(Int, Int, Boolean)]] = new Monoid[Option[(Int, Int, Boolean)]] {
+    override def op(a1: Option[(Int, Int, Boolean)], a2: Option[(Int, Int, Boolean)]): Option[(Int, Int, Boolean)] =
+      (a1, a2) match {
+        case (Some((x1, y1, f1)), Some((x2, y2, f2))) => Some((x1 min x2, y1 max y2, y1 <= x2 && f1 && f2))
+        case (x, None) => x
+        case (None, x) => x
+      }
 
-    override def zero: Int => Boolean = ???
+    override def zero: Option[(Int, Int, Boolean)] = None
   }
 
   def ordered(xs: IndexedSeq[Int]): Boolean =
-    foldMap(xs.toList, orderedMonoid)(curr => (f: Int => Int => Boolean) => f(curr, ))
+    foldMap(xs.toList, orderedMonoid)(i => Some((i, i, true))).forall(_._3)
+
+  sealed trait WC {
+    def countStubWords(stub: String): Int = stub.length min 1
+    def toInt: Int
+  }
+  case class Stub(chars: String) extends WC {
+    override def toInt: Int = countStubWords(chars)
+  }
+  case class Part(lStub: String, words: Int, rStub: String) extends WC {
+    def toInt: Int = countStubWords(lStub) + words + countStubWords(rStub)
+  }
+
+  val wcMonoid: Monoid[WC] = new Monoid[WC] {
+    override def op(a1: WC, a2: WC): WC = (a1, a2) match {
+      case (Stub(s1), Stub(s2)) => Stub(s1 + s2)
+      case (Stub(s), Part(l, w, r)) => Part(s + l, w, r)
+      case (Part(l, w, r), Stub(s)) => Part(l, w, r + s)
+      case (Part(l1, n1, r1), Part(l2, n2, r2)) =>
+        if (r1.isEmpty && l2.isEmpty)
+          Part(l1, n1 + n2, r2)
+        else
+          Part(l1, n1 + n2 + 1, r2)
+    }
+
+    override def zero: WC = Stub("")
+  }
+
+  def countWords(input: String): Int = {
+    println(input)
+    def loop(string: String): WC = {
+      if (string.length == 0) Stub("")
+      else string.splitAt(string.length / 2) match {
+        case ("", "") => Stub("")
+        case ("", s) => Stub(s)
+        case (s, "") => Stub(s)
+        case (" ", s) => Part("", 0, s)
+        case (s, " ") => Part(s, 0, "")
+        case (s1, s2) => wcMonoid.op(loop(s1), loop(s2))
+      }
+    }
+
+    loop(input).toInt
+  }
+
+  def countWords2(input: String ): Int = {
+    foldMapV(input.toIndexedSeq, wcMonoid)(c =>
+      if (c.isWhitespace) Part("", 0, "")
+      else Stub(c.toString)
+    ).toInt
+  }
+
 
   def main(args: Array[String]): Unit = {
     // (((0 - 1) - 2) - 3)
@@ -117,6 +173,8 @@ object Monoid {
     println(ordered(IndexedSeq(1, 2, 3, 4, 5)))
     println(ordered(IndexedSeq(1, 2, 4, 4, 5)))
     println(ordered(IndexedSeq(1, 2, 5, 4, 5)))
+    println(countWords("lorem ipsum dolor sit amet, "))
+    println(countWords2("lorem ipsum dolor sit amet, "))
   }
 
 }
