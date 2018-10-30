@@ -2,9 +2,12 @@ package chapter10
 
 import java.util.concurrent.Executors
 
+import chapter3.{Branch, Leaf, Tree}
 import chapter8.Prop
 import chapter8.gen.Gen
 import chapter7.Par._
+
+import scala.Option
 
 
 trait Monoid[A] {
@@ -89,7 +92,7 @@ object Monoid {
   }
 
   def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B]  =
-    flatMap(parMap(v.toList)(asyncF(f))) {
+    chapter7.Par.flatMap(parMap(v.toList)(asyncF(f))) {
       list => foldMapV(list.toIndexedSeq, par(m))(identity)
     }
 
@@ -157,6 +160,78 @@ object Monoid {
     ).toInt
   }
 
+  trait Foldable[F[_]] {
+    def foldRight[A,B](as: F[A])(z: B)(f: (A,B) => B): B
+    def foldLeft[A,B](as: F[A])(z: B)(f: (B,A) => B): B
+    def foldMap[A,B](as: F[A])(f: A => B)(mb: Monoid[B]): B
+    def concatenate[A](as: F[A])(m: Monoid[A]): A =
+      foldLeft(as)(m.zero)(m.op)
+    def toList[A](fa: F[A]): List[A] =
+      foldMap(fa)(a => List(a))(listMonoid)
+
+  }
+
+  val foldableList: Foldable[chapter3.List] = new Foldable[chapter3.List] {
+    override def foldRight[A, B](as: chapter3.List[A])(z: B)(f: (A, B) => B): B =
+      chapter3.List.foldRight(as, z)(f)
+
+    override def foldLeft[A, B](as: chapter3.List[A])(z: B)(f: (B, A) => B): B =
+      chapter3.List.foldLeft(as, z)(f)
+
+    override def foldMap[A, B](as: chapter3.List[A])(f: A => B)(mb: Monoid[B]): B =
+      foldLeft(as)(mb.zero)((b, a) => mb.op(b, f(a)))
+  }
+
+  val foldableIndexedSeq: Foldable[IndexedSeq] = new Foldable[IndexedSeq] {
+    override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B): B =
+      as.foldRight(z)(f)
+
+    override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B): B =
+      as.foldLeft(z)(f)
+
+    override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
+      foldLeft(as)(mb.zero)((b, a) => mb.op(b, f(a)))
+  }
+
+  val foldableStream: Foldable[chapter5.Stream] = new Foldable[chapter5.Stream] {
+    override def foldRight[A, B](as: chapter5.Stream[A])(z: B)(f: (A, B) => B): B =
+      as.foldRight(z)((a, b) => f(a, b))
+
+    override def foldLeft[A, B](as: chapter5.Stream[A])(z: B)(f: (B, A) => B): B =
+      as.foldLeftViaFoldRight(z)((b, a) => f(b, a))
+
+    override def foldMap[A, B](as: chapter5.Stream[A])(f: A => B)(mb: Monoid[B]): B =
+      foldRight(as)(mb.zero)((a, b) => mb.op(b, f(a)))
+  }
+
+  val foldableTree: Foldable[Tree] = new Foldable[Tree] {
+    override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B): B = {
+      val mb = endoMonoid[B]
+      foldMap(as)(a => (b: B) => f(a, b))(mb)(z)
+    }
+
+    override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B): B = {
+      val mb = endoMonoid[B]
+      foldMap(as)(a => (b: B) => f(b, a))(mb)(z)
+    }
+
+    override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B = as match {
+      case Leaf(a) => f(a)
+      case Branch(left, right) => mb.op(foldMap(left)(f)(mb), foldMap(right)(f)(mb))
+    }
+  }
+
+  val foldableOption = new Foldable[Option] {
+    override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B =
+      as.foldRight(z)(f)
+
+    override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B): B =
+      as.foldLeft(z)(f)
+
+    override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
+      foldRight(as)(mb.zero)((a, b) => mb.op(f(a), b))
+  }
+
 
   def main(args: Array[String]): Unit = {
     // (((0 - 1) - 2) - 3)
@@ -175,6 +250,20 @@ object Monoid {
     println(ordered(IndexedSeq(1, 2, 5, 4, 5)))
     println(countWords("lorem ipsum dolor sit amet, "))
     println(countWords2("lorem ipsum dolor sit amet, "))
+
+    val tree = Branch(
+      Branch(Leaf("lorem"), Leaf("ipsum")),
+      Branch(Leaf("dolor"), Branch(
+        Leaf("sit"), Leaf("amet")
+      ))
+    )
+
+    println(foldableTree.foldLeft(tree)("")(_ + _))
+    println(foldableTree.foldRight(tree)("")(_ + _))
+    println(foldableTree.foldMap(tree)(identity)(stringMonoid))
+    println(foldableOption.foldRight(Option("A"))("B")(_ + _))
+    println(foldableOption.foldLeft(Option("A"))("B")(_ + _))
+    println(foldableTree.toList(tree))
   }
 
 }
