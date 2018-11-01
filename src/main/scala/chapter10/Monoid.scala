@@ -3,11 +3,9 @@ package chapter10
 import java.util.concurrent.Executors
 
 import chapter3.{Branch, Leaf, Tree}
+import chapter7.Par._
 import chapter8.Prop
 import chapter8.gen.Gen
-import chapter7.Par._
-
-import scala.Option
 
 
 trait Monoid[A] {
@@ -221,7 +219,7 @@ object Monoid {
     }
   }
 
-  val foldableOption = new Foldable[Option] {
+  val foldableOption: Foldable[Option] = new Foldable[Option] {
     override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B): B =
       as.foldRight(z)(f)
 
@@ -232,6 +230,32 @@ object Monoid {
       foldRight(as)(mb.zero)((a, b) => mb.op(f(a), b))
   }
 
+  def productMonoid[A,B](A: Monoid[A], B: Monoid[B]): Monoid[(A,B)] =
+    new Monoid[(A, B)] {
+      override def op(a1: (A, B), a2: (A, B)): (A, B) =
+        (A.op(a1._1, a2._1), B.op(a1._2, a2._2))
+
+      override def zero: (A, B) = (A.zero, B.zero)
+    }
+
+  def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K, V]] =
+    new Monoid[Map[K, V]] {
+      def zero: Map[K, V] = Map[K,V]()
+      def op(a: Map[K, V], b: Map[K, V]): Map[K, V] =
+        (a.keySet ++ b.keySet).foldLeft(zero) { (acc,k) =>
+          acc.updated(k, V.op(a.getOrElse(k, V.zero),
+            b.getOrElse(k, V.zero)))
+        }
+    }
+
+  def functionMonoid[A,B](B: Monoid[B]): Monoid[A => B] = new Monoid[A => B] {
+    override def op(a1: A => B, a2: A => B): A => B = a => B.op(a1(a), a2(a))
+
+    override def zero: A => B = _ => B.zero
+  }
+
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] =
+    foldMapV(as, mapMergeMonoid[A, Int](intAddition))(a => Map((a, 1)))
 
   def main(args: Array[String]): Unit = {
     // (((0 - 1) - 2) - 3)
@@ -264,6 +288,16 @@ object Monoid {
     println(foldableOption.foldRight(Option("A"))("B")(_ + _))
     println(foldableOption.foldLeft(Option("A"))("B")(_ + _))
     println(foldableTree.toList(tree))
+
+    val m1 = Map("o1" -> Map("i1" -> 1, "i2" -> 2))
+    val m2 = Map("o1" -> Map("i2" -> 3))
+
+    val M: Monoid[Map[String, Map[String, Int]]] =
+      mapMergeMonoid(mapMergeMonoid(intAddition))
+    val m3 = M.op(m1, m2)
+    println(m3)
+
+    println(bag(Vector("a", "rose", "is", "a", "rose")))
   }
 
 }

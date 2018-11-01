@@ -54,4 +54,9 @@ class MonoidTest extends Properties("Monoid laws testing") {
    !monoidLaws(wcMonoid, gen).run(testCases, rng).isFalsified
   })
 
+
+  property("product monoid") = forAll(seed)(_ => {
+    !monoidLaws(productMonoid(intAddition, intMultiplication), Gen.choosePair(0, Int.MaxValue)).run(testCases, rng).isFalsified
+  })
+
 }
