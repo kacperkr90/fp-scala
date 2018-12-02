@@ -2,12 +2,11 @@ package chapter11
 
 import chapter4.Option
 import chapter5.Stream
-import chapter6.State
-import chapter7.Par.Par
 import chapter7.Par
+import chapter7.Par.Par
 import chapter8.gen.Gen
 
-trait Monad[F[_]] extends Functor[F] {
+trait Monad[F[_]] extends Functor[F] {self =>
   def unit[A](a: A): F[A]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
@@ -21,6 +20,29 @@ trait Monad[F[_]] extends Functor[F] {
 
   def traverse[A,B](la: List[A])(f: A => F[B]): F[List[B]] =
     sequence(la map f)
+
+  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
+    sequence(List.fill(n)(ma))
+
+  def product[A,B](ma: F[A], mb: F[B]): F[(A, B)] =
+    map2(ma, mb)((_, _))
+
+  // first try, ugly (one iteration through list)
+  def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
+    ms.foldRight(unit(Nil:List[A]))((m, acc) => map2(f(m), acc)((b, as) => if (b) m::as else as))
+
+  // two iterations but cleaner (i think)
+  def filterM2[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] = {
+    traverse(ms)(m => product(unit(m), f(m))).map(_.filter(_._2).map(_._1))
+  }
+
+  // helper class for cleaner code
+  implicit def operators[A](m: F[A]): MonadOps[A] = MonadOps[A](m)
+
+  case class MonadOps[A](m: F[A]) {
+    def map[B](f: A => B): F[B] = self.map(m)(f)
+    def flatMap[B](f: A => F[B]): F[B] = self.flatMap(m)(f)
+  }
 }
 
 
@@ -51,6 +73,12 @@ object Monad {
     override def flatMap[A, B](fa: chapter3.List[A])(f: A => chapter3.List[B]): chapter3.List[B] = chapter3.List.flatMap(fa)(f)
   }
 
-  val stateMonad: Monad[State] = ???
+//  val stateMonad: Monad[State] = ???
+
+  def main(args: Array[String]): Unit = {
+    val ints = List(1, 2, 3, 5, 6, 7)
+    val res = optionMonad.filterM(ints)(n => optionMonad.unit(n % 2 == 0))
+    println(res)
+  }
 
 }
