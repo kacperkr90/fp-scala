@@ -36,6 +36,33 @@ trait Monad[F[_]] extends Functor[F] {self =>
     traverse(ms)(m => product(unit(m), f(m))).map(_.filter(_._2).map(_._1))
   }
 
+  def compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
+    a => f(a).flatMap(g)
+
+  def flatMapViaCompose[A, B](fa: F[A])(f: A => F[B]): F[B] =
+    compose(identity[F[A]], f)(fa)
+
+  // EXERCISE 11.10
+  // compose(unit, f)(v) == f(v)
+  // (a => flatMap(f(a))(unit))(v) == f(v)
+  // flatMap(f(v))(unit) == f(v)
+  // flatMap(x)(unit) == x
+  // x == x
+
+  // compose(f, unit)(v) == f(v)
+  // (a => flatMap(unit(a))(f))(v) == f(v)
+  // flatMap(unit(v))(f) == f(v) | after computing unit(v) and then passing it to flatMap we get f(v)
+  // f(v) == f(v)
+
+  def join[A](mma: F[F[A]]): F[A] =
+    flatMap(mma)(x => x)
+
+  def _compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
+    a => join(map(f(a))(g))
+
+  def _flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] =
+    join(map(fa)(f))
+
   // helper class for cleaner code
   implicit def operators[A](m: F[A]): MonadOps[A] = MonadOps[A](m)
 
@@ -79,6 +106,9 @@ object Monad {
     val ints = List(1, 2, 3, 5, 6, 7)
     val res = optionMonad.filterM(ints)(n => optionMonad.unit(n % 2 == 0))
     println(res)
+
+    println(optionMonad.flatMapViaCompose(Option(4))(x => Option(x * 2)))
+    println(optionMonad.join(Option(Option(4))))
   }
 
 }
