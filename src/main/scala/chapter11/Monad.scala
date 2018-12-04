@@ -2,6 +2,7 @@ package chapter11
 
 import chapter4.Option
 import chapter5.Stream
+import chapter6.{RNG,SimpleRNG, State}
 import chapter7.Par
 import chapter7.Par.Par
 import chapter8.gen.Gen
@@ -100,7 +101,30 @@ object Monad {
     override def flatMap[A, B](fa: chapter3.List[A])(f: A => chapter3.List[B]): chapter3.List[B] = chapter3.List.flatMap(fa)(f)
   }
 
-//  val stateMonad: Monad[State] = ???
+  case class Id[A](value: A) {
+    def map[B](f: A => B): Id[B] =
+      Id(f(value))
+
+    def flatMap[B](f: A => Id[B]): Id[B] =
+      f(value)
+  }
+
+  val idMonad: Monad[Id] = new Monad[Id] {
+    override def unit[A](a: A): Id[A] = Id(a)
+    override def flatMap[A, B](fa: Id[A])(f: A => Id[B]): Id[B] = fa.flatMap(f)
+  }
+
+  type IntState[A] = State[Int, A]
+
+  val intStateMonad: Monad[IntState] = new Monad[IntState] {
+    override def unit[A](a: A): IntState[A] = State(s => (a, s))
+    override def flatMap[A, B](fa: IntState[A])(f: A => IntState[B]): IntState[B] = fa.flatMap(f)
+  }
+
+  def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
+    override def unit[A](a: A): State[S, A] = State(s => (a, s))
+    override def flatMap[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] = fa.flatMap(f)
+  }
 
   def main(args: Array[String]): Unit = {
     val ints = List(1, 2, 3, 5, 6, 7)
@@ -109,6 +133,18 @@ object Monad {
 
     println(optionMonad.flatMapViaCompose(Option(4))(x => Option(x * 2)))
     println(optionMonad.join(Option(Option(4))))
+
+    println(Id("Hello, ") flatMap (a => Id("monad!") flatMap(b => Id(a + b))))
+    println(for {
+      a <- Id("Hello, ")
+      b <- Id("moand!")
+    } yield a + b)
+
+    val rng = SimpleRNG(1)
+    val state = State(SimpleRNG.nonNegativeInt)
+    val state2 = State(SimpleRNG.nonNegativeEven)
+    println(stateMonad[RNG].replicateM[Int](4, state).run(rng))
+    println(stateMonad[RNG].map2(state, state2)(_ + _).run(rng))
   }
 
 }
