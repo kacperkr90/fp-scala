@@ -141,10 +141,11 @@ object Monad {
     } yield a + b)
 
     val rng = SimpleRNG(1)
-    val state = State(SimpleRNG.nonNegativeInt)
-    val state2 = State(SimpleRNG.nonNegativeEven)
+    val state = State(SimpleRNG.nonNegativeLessThan(1000))
+    val state2 = State(SimpleRNG.nonNegativeLessThan(100))
     println(stateMonad[RNG].replicateM[Int](4, state).run(rng))
     println(stateMonad[RNG].map2(state, state2)(_ + _).run(rng))
+    println(stateMonad[RNG].sequence(List(state, state2)).run(rng))
   }
 
 }
