@@ -126,6 +126,16 @@ object Monad {
     override def flatMap[A, B](fa: State[S, A])(f: A => State[S, B]): State[S, B] = fa.flatMap(f)
   }
 
+  case class Reader[R, A](run: R => A)
+
+  def readerMonad[R] = new Monad[({type f[x] = Reader[R,x]})#f] {
+    override def unit[A](a: A): Reader[R,A] = Reader(_ => a)
+    override def flatMap[A,B](st: Reader[R,A])(f: A => Reader[R,B]): Reader[R,B] =
+      Reader(r => st.run.andThen(f)(r).run(r))
+    def flatMap_[A,B](st: Reader[R,A])(f: A => Reader[R,B]): Reader[R,B] =
+      Reader(r => f(st.run(r)).run(r))
+  }
+
   def main(args: Array[String]): Unit = {
     val ints = List(1, 2, 3, 5, 6, 7)
     val res = optionMonad.filterM(ints)(n => optionMonad.unit(n % 2 == 0))
@@ -146,6 +156,16 @@ object Monad {
     println(stateMonad[RNG].replicateM[Int](4, state).run(rng))
     println(stateMonad[RNG].map2(state, state2)(_ + _).run(rng))
     println(stateMonad[RNG].sequence(List(state, state2)).run(rng))
+
+    val timesTwo = Reader[Int, Int](_ * 2)
+    val powerTwo = Reader[Int, Int](n => Math.pow(n, 2).intValue())
+
+    val intReader = readerMonad[Int]
+    println(intReader.replicateM(5, timesTwo).run(5)) // reads same input n times always using same reader
+    println(intReader.sequence(List(timesTwo, powerTwo)).run(5)) // apply multiple readers to same input and get multiple results
+    println(intReader.join(intReader.unit(timesTwo))
+
+    )
   }
 
 }
