@@ -55,6 +55,23 @@ trait Applicative[F[_]] extends Functor[F] {
   }
 }
 
+object Applicative {
+  val streamApplicative = new Applicative[Stream] {
+    override def map2[A, B, C](fa: Stream[A], fb: Stream[B])(f: (A, B) => C): Stream[C] =
+      fa zip fb map f.tupled
+    override def unit[A](a: => A): Stream[A] =
+      Stream.continually(a)
+  }
+
+  def main(args: Array[String]): Unit = {
+    val ones = streamApplicative.unit(1)
+    val twos = streamApplicative.unit(2)
+    val threes = streamApplicative.unit(3)
+    val stream = streamApplicative.sequence(List(ones, twos, threes))
+    stream.take(5).foreach(println)
+  }
+
+}
 
 trait Monad[F[_]] extends Applicative[F] {
   def flatMap[A,B](fa: F[A])(f: A => F[B]): F[B] = join(map(fa)(f))
